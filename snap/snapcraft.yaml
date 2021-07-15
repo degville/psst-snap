@@ -20,6 +20,7 @@ parts:
     plugin: nil
     source: https://github.com/jpochyla/psst.git
     build-packages:
+      - curl
       - llvm
       - clang
       - libclang-dev
