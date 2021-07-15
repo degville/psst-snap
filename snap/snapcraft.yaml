@@ -35,7 +35,7 @@ parts:
     override-build: |
       curl https://sh.rustup.rs -sSf | sh -s -- -y
       #snapcraftctl build
-      $HOME/.cargo/bin/cargo build --release
+      $HOME/.cargo/bin/cargo build
       mkdir -p $SNAPCRAFT_PART_INSTALL/bin
       cp target/release/psst-gui $SNAPCRAFT_PART_INSTALL/bin
   desktop-file:
