@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=psst-gui
+GenericName=Lightweight Spotify client
+Exec=qvgeapp
+Icon=${SNAP}/psst-gui.png
+Type=Application
+StartupNotify=false
+Terminal=false
+Categories=AudioVideo;Audio

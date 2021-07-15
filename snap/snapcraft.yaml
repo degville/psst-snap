@@ -1,0 +1,43 @@
+name: psst-gui
+base: core20 
+adopt-info: psst-gui
+summary: Fast Spotify client with native GUI, without Electron, built in Rust. 
+description: |
+ Very early in development, lacking in features, stability, and general user experience.
+icon: gui/psst-gui.png
+grade: stable
+confinement: strict
+
+apps:
+  psst-gui:
+      extensions: [gnome-3-38]
+      command: bin/psst-gui
+      desktop: psst-gui.desktop
+      plugs: [opengl, network, network-bind, audio-playback]
+
+parts:
+  psst-gui:
+    plugin: nil
+    source: https://github.com/jpochyla/psst.git
+    build-packages:
+      - llvm
+      - clang
+      - libclang-dev
+      - libssl-dev
+      - libgtk-3-dev
+      - libcairo2-dev
+      - libpango1.0-dev
+    override-pull: |
+      snapcraftctl pull
+      snapcraftctl set-version \
+      "$(git describe --long --tags --always --match=v*.*.* | sed 's/v//')"
+    override-build: |
+      curl https://sh.rustup.rs -sSf | sh -s -- -y
+      #snapcraftctl build
+      $HOME/.cargo/bin/cargo build --release
+      mkdir -p $SNAPCRAFT_PART_INSTALL/bin
+      cp target/release/psst-gui $SNAPCRAFT_PART_INSTALL/bin
+  desktop-file:
+    source: gui
+    source-type: local
+    plugin: dump
