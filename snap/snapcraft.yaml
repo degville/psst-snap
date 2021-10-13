@@ -8,6 +8,10 @@ icon: gui/psst-gui.png
 grade: stable
 confinement: strict
 
+architectures:
+  - build-on: [amd64]
+    run-on: [amd64]
+
 apps:
   psst-gui:
       extensions: [gnome-3-38]
