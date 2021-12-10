@@ -32,6 +32,7 @@ parts:
       - libgtk-3-dev
       - libcairo2-dev
       - libpango1.0-dev
+      - libasound2-dev
     rust-path: ["psst-gui"]
     override-pull: |
       snapcraftctl pull
