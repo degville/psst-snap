@@ -18,6 +18,14 @@ apps:
       command: bin/psst-gui
       desktop: psst-gui.desktop
       plugs: [opengl, network, network-bind, audio-playback]
+      slots:
+        - dbus-daemon 
+
+slots:
+  dbus-daemon:
+    interface: dbus
+    bus: session
+    name: org.mpris.MediaPlayer2.psst
 
 environment:
   ALWAYS_USE_PULSEAUDIO: '1'
