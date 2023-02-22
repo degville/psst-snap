@@ -20,6 +20,7 @@ apps:
       plugs: [opengl, network, network-bind, audio-playback]
       slots:
         - dbus-daemon 
+        - mpris
 
 slots:
   dbus-daemon:
