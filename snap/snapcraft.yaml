@@ -1,5 +1,5 @@
 name: psst-gui
-base: core20 
+base: core22
 adopt-info: psst-gui
 summary: Fast Spotify client with native GUI, without Electron, built in Rust. 
 description: |
@@ -9,21 +9,44 @@ grade: stable
 confinement: strict
 
 architectures:
-  - build-on: [amd64]
-    run-on: [amd64]
+  - build-on: amd64
 
 apps:
   psst-gui:
-      extensions: [gnome-3-38]
+      extensions: [gnome]
+      command-chain: ["snap/command-chain/alsa-launch"]
       command: bin/psst-gui
       desktop: psst-gui.desktop
       plugs: [opengl, network, network-bind, audio-playback]
 
+environment:
+  ALWAYS_USE_PULSEAUDIO: '1'
+
 parts:
+  rust:
+    plugin: nil
+    build-packages:
+      - wget
+    override-pull: |
+      # Do not use rustup to work around https://forum.snapcraft.io/t/armhf-builds-on-launchpad-timing-out/31008
+      REQUIRED_RUST_VERSION=1.65.0
+      ROOT=https://static.rust-lang.org/dist/rust-$REQUIRED_RUST_VERSION
+      if [ $SNAPCRAFT_TARGET_ARCH = "amd64" ]; then
+        BINARIES_SUFFIX=x86_64-unknown-linux-gnu
+      elif [ $SNAPCRAFT_TARGET_ARCH = "armhf" ]; then
+        BINARIES_SUFFIX=armv7-unknown-linux-gnueabihf
+      elif [ $SNAPCRAFT_TARGET_ARCH = "arm64" ]; then
+        BINARIES_SUFFIX=aarch64-unknown-linux-gnu
+      fi
+      wget -O - $ROOT-$BINARIES_SUFFIX.tar.gz | tar -x -z --strip-components=1
+      ./install.sh --prefix=/usr --destdir=$SNAPCRAFT_STAGE
+    override-prime: ''
   psst-gui:
+    after: [rust,alsa-mixin]
     plugin: rust
     source: https://github.com/jpochyla/psst.git
     build-packages:
+      - cargo
       - curl
       - llvm
       - clang
@@ -35,16 +58,53 @@ parts:
       - libasound2-dev
     rust-path: ["psst-gui"]
     override-pull: |
-      snapcraftctl pull
-      snapcraftctl set-version \
+      craftctl default
+      craftctl set version=\
       "$(git describe --long --tags --always --match=v*.*.* | sed 's/v//')"
     override-build: |
       # curl https://sh.rustup.rs -sSf | sh -s -- -y
-      snapcraftctl build
+      craftctl default
       #$HOME/.cargo/bin/cargo build
-      mkdir -p $SNAPCRAFT_PART_INSTALL/bin
-      cp target/release/psst-gui $SNAPCRAFT_PART_INSTALL/bin
+      # mkdir -p $SNAPCRAFT_PART_INSTALL/bin
+      #cp target/release/psst-gui $SNAPCRAFT_PART_INSTALL/bin
   desktop-file:
     source: gui
     source-type: local
     plugin: dump
+  alsa-mixin:
+    plugin: dump
+    source: https://github.com/diddlesnaps/snapcraft-alsa.git
+    source-subdir: snapcraft-assets
+    build-packages:
+      - libasound2-dev
+    stage-packages:
+      - libasound2
+      - libasound2-plugins
+      - yad
+    stage:
+      # restrict to only audio-related files - you need to ensure
+      # that gtk3 is staged for yad to work correctly, to prompt
+      # users to connect the alsa plug or proceed with pulseaudio.
+      #
+      # This helps prevent symbol conflicts in situations where
+      # you're using a non-default library, such as those that the
+      # gnome-3-34 extension for core18 provides.
+      - etc/asound.conf
+      - snap/command-chain/alsa-launch
+      - usr/bin/yad*
+      - usr/lib/$SNAPCRAFT_ARCH_TRIPLET/alsa-lib
+      - usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libasound*
+      - usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libdnsfile*
+      - usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libFLAC*
+      - usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libjack*
+      - usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libpulse*
+      - usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libsamplerate*
+      - usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libspeex*
+      - usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libvorbis*
+      - usr/lib/$SNAPCRAFT_ARCH_TRIPLET/pulseaudio
+
+layout:
+  /usr/lib/$SNAPCRAFT_ARCH_TRIPLET/alsa-lib:
+    bind: $SNAP/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/alsa-lib
+  /usr/share/alsa:
+    bind: $SNAP/usr/share/alsa
